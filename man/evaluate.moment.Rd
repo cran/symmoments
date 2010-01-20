@@ -16,10 +16,7 @@
 }
 \value{numeric value of the moment at the specified covariance matrix}
 
-\references{
-Phillips K (2010). Symbolic Computation of the Central Moments of the
-  Multivariate Normal Distribution. \emph{Journal of Statistical Software, Code Snippets},
-  \bold{33}(1), 1--14. \url{http://www.jstatsoft.org/v33/c01/}.
+\references{ K Phillips, Symbolic Computation of the Central Moments of the Multivariate Normal Distribution, Journal of Statistical Software, 2010. 
 }
 \author{Kem Phillips <kemphillips@comcast.net>}
 \seealso{ callmultmoments and the simulate and toLatex methods from the symmoments package}

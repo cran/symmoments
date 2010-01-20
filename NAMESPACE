@@ -1,4 +1,5 @@
 import("stats", "utils")
+importFrom("mvtnorm", "rmvnorm")
 
 export(
   "callmultmoments",

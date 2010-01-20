@@ -27,11 +27,8 @@ For example, (1,2,0) represents S11**1 S12** S22**0, where the Sij are the covar
 The full moment is the sum of these terms multiplied by their respective coefficients.
 If the sum of the exponents is odd, the moment is 0.  
 }
-\references{
-Phillips K (2010). Symbolic Computation of the Central Moments of the
-  Multivariate Normal Distribution. \emph{Journal of Statistical Software, Code Snippets},
-  \bold{33}(1), 1--14. \url{http://www.jstatsoft.org/v33/c01/}.
-}
+\references{ K Phillips, Symbolic Computation of the Central Moments of the Multivariate Normal Distribution, 
+Journal of Statistical Software, 2010.}
 \author{Kem Phillips <kemphillips@comcast.net>}
 \seealso{ multmoments and the methods toLatex, evaluate, and simulate in symmoments}
 \examples{

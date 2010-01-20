@@ -10,11 +10,8 @@
 \details{ Prints the moment as E[X1**k1 X2**k2 ...]:  followed by the lines of the representation
 with the corresponding coefficient attached}
 
-\references{
-Phillips K (2010). Symbolic Computation of the Central Moments of the
-  Multivariate Normal Distribution. \emph{Journal of Statistical Software, Code Snippets},
-  \bold{33}(1), 1--14. \url{http://www.jstatsoft.org/v33/c01/}.
-}
+\references{ K Phillips, Symbolic Computation of the Central Moments of the Multivariate Normal Distribution, 
+Journal of Statistical Software, 2010. }
 \author{Kem Phillips <kemphillips@comcast.net>}
 \seealso{ callmultmoments (symmoments) }
 

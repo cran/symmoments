@@ -273,7 +273,7 @@ if (totreps > 1){
      mcoeff <- 0
      for (jrep in (1:totreps)) # check each transposition
           {newrep <- baserep[jrep, ]       #  added lower diagonal elements
-           addrep <- sort(newrep, decreasin=TRUE)[1:(lmom * (lmom - 1) / 2)] 
+           addrep <- sort(newrep, decreasing=TRUE)[1:(lmom * (lmom - 1) / 2)] 
            fulnrep <- c((thisrep - newrep), addrep)
            thiscoeff <- ((length(fulnrep))^sum(fulnrep)) * dmultinom(x=fulnrep, prob=rep(1.0, length(fulnrep)))
            mcoeff <- mcoeff + thiscoeff

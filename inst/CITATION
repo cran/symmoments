@@ -1,18 +1,16 @@
 citHeader("To cite symmoments in publications use:")
 
 citEntry(entry = "Article",
-  title        = "{R} Functions to Symbolically Compute the Central Moments of the Multivariate Normal Distribution",
+  title        = "{R} Functions to Symbolically Compute
+  		   the Central Moments of the Multivariate Normal
+		   Distribution",
   author       = personList(as.person("Kem Phillips")),
   journal      = "Journal of Statistical Software, Code Snippets",
   year         = "2010",
-  volume       = "33",
-  number       = "1",
-  pages        = "1--14",
-  url          = "http://www.jstatsoft.org/v33/c01/",
+  note         = "Forthcoming",
 
   textVersion  =
   paste("Kem Phillips (2010).",
         "R Functions to Symbolically Compute the Central Moments of the Multivariate Normal Distribution.",
-        "Journal of Statistical Software, Code Snippets, 33(1), 1-14.",
-        "URL http://www.jstatsoft.org/v33/c01/.")
+        "Journal of Statistical Software, Code Snippets, Forthcoming.")
 )
