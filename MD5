@@ -1,0 +1,14 @@
+432e5d8204b7737a2c8eb2c3f6680df2 *DESCRIPTION
+60fd79d1bb7e84952e6d38c6f68251df *NAMESPACE
+ba440ab03d184bb1cb935fddfb9f5168 *R/symmoments.R
+4417c4bff9969bbe6bea9168fb07a6e3 *inst/CITATION
+ad52b11040e3ea422fb2d8b0701a57ef *inst/doc/moments.bib
+f037bef14b7d2b9d5150314205bf335b *inst/doc/symmoments.Rnw
+1e34317609d946eac4e898fa4744435f *inst/doc/symmoments.pdf
+572fe4fb5055a09324115964ceda0a20 *man/callmultmoments.Rd
+e9634bdffc1dc6529ee9ab711af153de *man/evaluate.moment.Rd
+1aa01a11e8827f2024471f89bb052aac *man/multmoments.Rd
+40ee5d99e840d4e9a3782ea303031f5d *man/print.moment.Rd
+9fded760e503a64c476e15a68ae2c181 *man/simulate.moment.Rd
+5e89703b36b75c7f2808df59ae2fc198 *man/symmoments-package.Rd
+ec7d6ff382fe83f24caa9b1525de4dc2 *man/toLatex.moment.Rd

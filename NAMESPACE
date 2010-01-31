@@ -1,0 +1,12 @@
+import("stats", "utils")
+
+export(
+  "callmultmoments",
+  "evaluate",
+  "multmoments"    
+)
+
+S3method("evaluate", "moment")
+S3method("print", "moment")
+S3method("simulate", "moment")
+S3method("toLatex", "moment")

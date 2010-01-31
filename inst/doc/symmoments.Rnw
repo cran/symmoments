@@ -1,0 +1,627 @@
+\documentclass[nojss,shortnames]{jss}
+\usepackage{amsmath,rotating,thumbpdf}
+
+%% need no \usepackage{Sweave}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+%\VignetteIndexEntry{R Functions to Symbolically Compute the Central Moments of the Multivariate Normal Distribution}
+%\VignetteDepends{symmoments,mvtnorm}
+%\VignetteKeywords{central moments, multivariate normal distribution, symbolic computation, R, LaTeX}
+%\VignettePackage{symmoments}
+
+\author{Kem Phillips\\Sourland Biostatistics}
+\Plainauthor{Kem Phillips}
+
+\title{\proglang{R} Functions to Symbolically Compute the Central Moments of the Multivariate Normal Distribution}
+\Plaintitle{R Functions to Symbolically Compute the Central Moments of the Multivariate Normal Distribution}
+\Shorttitle{Symbolic Computation of the Central Moments of the Multivariate Normal Distribution}
+
+\Abstract{The central moments of the multivariate normal distribution are functions of
+its $n \times n$ variance-covariance matrix $\Sigma$.
+These moments can be expressed symbolically as linear combinations of products of powers of the elements of $\Sigma$.
+A formula for these moments derived by differentiating the characteristic function is developed.
+The formula requires searching integer matrices for matrices
+whose $n$ successive row and column sums equal the $n$ exponents of the moment.
+This formula is implemented in \proglang{R}, with
+\proglang{R} functions to display moments in {\LaTeX}
+ and to evaluate moments at specified variance-covariance matrices included.}
+
+\Keywords{central moments, multivariate normal distribution, symbolic computation, \proglang{R}, \LaTeX}
+\Plainkeywords{central moments, multivariate normal distribution, symbolic computation, R, LaTeX}
+
+\Volume{33}
+\Issue{1}
+\Month{February}
+\Year{2010}
+\Submitdate{2009-05-21}
+\Acceptdate{2009-11-20}
+
+\Address{
+  Kem Phillips \\
+  314 Rileyville Road \\
+  Ringoes \\
+  NJ, 08551, United States of America \\
+  E-mail: \email{kemphillips@comcast.net}
+}
+
+\begin{document}
+
+<<preliminaries, echo=FALSE, results=hide>>=
+options(prompt = "R> ", continue = "+  ")
+library("symmoments")
+@
+
+\section{Introduction}
+\label{intro}
+
+The central moments of an $n$-dimensional random vector $X$ are defined as
+\begin{equation}
+m_{k_{1},...,k_{n}} = E[(X_{1}-\mu_{1})^{k_{1}}(X_{2}-\mu_{2})^{k_{2}} \cdots (X_{n}-\mu_{n})^{k_{n}}],
+\end{equation}
+where $E[\cdots]$ denotes expected value.
+Suppose that $X$ is distributed according to the multivariate normal distribution
+with mean $\mu$ and variance-covariance matrix
+\begin{equation}
+\Sigma = (\sigma_{ij})
+\end{equation}
+where the variance terms are $\sigma_{ii}, i=1,\dots,n$,
+the covariance terms are $\sigma_{ij}, i \neq j$,
+and by symmetry $\sigma_{ij} = \sigma_{ji}$.
+For the multivariate normal distribution the central moments are not functions of the mean vector $\mu$,
+and depend only on the variance-covariance terms $\sigma_{ij}$.
+
+Simple cases are familiar.  Setting $\mu$ to 0,
+\begin{eqnarray}
+m_{2} = E[ X_{ 1 }^{ 2 } ] =
+  \sigma_{  1 , 1 }
+\end{eqnarray}
+\begin{eqnarray}
+m_{1,2} = E[ X_{1}X_{ 2} ] =  \sigma_{1,2}
+\end{eqnarray}
+Slightly more complicated cases can be computed directly or by manipulating
+simple expressions obtained for moments of the form $E[ X_{1} \cdots X_{n} ]$ \citep{wikipedia}.
+For example,
+\begin{eqnarray}
+m_{2,2} = E[ X_{ 1 }^{ 2 } X_{ 2 }^{ 2 } ] =
+2 \sigma_{  1 , 2 }^{ 2 }   +
+  \sigma_{  1 , 1 } \sigma_{  2 , 2 }
+\end{eqnarray}
+\begin{eqnarray}
+m_{2,1,1} = E[ X_{ 1 }^{ 2 } X_{ 2 }^{ 1 } X_{ 3 }^{ 1 } ] =
+2 \sigma_{  1 , 2 } \sigma_{  1 , 3 }  +
+  \sigma_{  1 , 1 } \sigma_{  2 , 3 }
+\end{eqnarray}
+\begin{eqnarray}
+m_{1,1} = E[ X_{ 1 }^{ 3 } X_{ 2 }^{ 1 } ] =
+3 \sigma_{  1 , 1 } \sigma_{  1 , 2 }
+\end{eqnarray}
+Although some higher order moments follow known patterns, most are much harder to determine by simple calculations.
+
+We wish to compute the symbolic expression of any moment $m_{k_{1},...,k_{n}}$
+in terms of the $n(n+1)$ symbols $\sigma_{ij}$.
+Note that if $\sum_{i=1}^{n} k_{i}$ is an odd integer, the moment is 0, so that only moments where this sum is even need be considered.
+
+The multivariate normal distribution is fundamental to mathematical statistics, and its moments
+play a central role in statistical methodology.
+Various methods have been developed to numerically compute them \citep[p.~46]{muirhead82} and \citep[p.~49]{anderson71}.
+\cite{kan08} developed a formula (his Proposition 1) for the central moments as a repeated sum.
+He gives an excellent review of other formulas that have been developed, and
+cites \cite{isserli18} as deriving the first expression for the central moments.
+Muirhead (p.~49) used the matrix derivatives of the multivariate normal distribution's characteristic function
+to derive a formula for multivariate cumulants.
+\cite{tracy93} also used matrix derivatives
+to derive an expression for the distribution's moments (their Theorem~2) based on a recurrence relationship of the derivatives.
+This article develops a new explicit formula for the moments starting with the
+derivatives of the characteristic function.
+The expression for the moments is based on a search algorithm over certain integer matrices.
+The final goal of this paper is to translate this formula into \proglang{R} functions
+that produce symbolic representations of
+moments in terms of the variance-covariance terms $\sigma_{ij}$.
+
+The functions described here are based on \cite{phillips10}, and
+are available in the package \pkg{symmoments} implemented in the \proglang{R} system for
+statistical computing \citep{Rcitation}. Both \proglang{R} itself and the
+\pkg{symmoments} package (as well as all other packages used in this paper) are available under
+the terms of the General Public License (GPL) from the Comprehensive \proglang{R} Archive Network (CRAN,
+\url{http://CRAN.R-project.org/}).
+
+
+\section{Development of the formula}
+
+
+The moments of any distribution can be represented by the derivatives of the distribution's characteristic function.
+The characteristic function of the multivariate normal distribution is \citep[p.~5,~49]{muirhead82}
+\begin{equation}
+E[e^{it^{\top}X}] = e^{it^{\top}\mu - \frac{1}{2}t^{\top}\Sigma t}
+\end{equation}
+where $t=(t_{1},t_{2},...,t_{n})$.
+Within a constant, the moment is the $k_{1},...,k_{n}$-order derivative of the characteristic function evaluated at $t=0$:
+\begin{equation}
+m_{k_{1},...,k_{n}} = i^{-\sum_{i=1}^{n}k_{i}} \; \frac{d^{\sum_{i=1}^{n}k_{i}}}{d^{k_{1}}t_{1} d^{k_{2}}t_{2} \cdots d^{k_{n}}t_{n}} \;\; E[e^{it^{\top}X}] \mid _{t=0}
+\end{equation}
+where $i$ is the imaginary unit.
+Expanding the exponential into an infinite sum, this is
+\begin{equation}
+m_{k_{1},...,k_{n}} = i^{-\sum_{i=1}^{n}k_{i}} \; \frac{d^{\sum_{i=1}^{n}k_{i}}}{d^{k_{1}}t_{1} d^{k_{2}}t_{2} \cdots d^{k_{n}}t_{n}} \; \sum_{\ell=0}^{\infty} (it^{\top}\mu - \frac{1}{2}(t^{\top}\Sigma t))^{\ell}/\ell! \mid _{t=0}
+\end{equation}
+Since we are to compute the central moment, we will set $\mu = 0$, so that the term $it^{\top}\mu$ will not appear:
+\begin{equation}
+\label{chareq}
+m_{k_{1},...,k_{n}} = i^{-\sum_{i=1}^{n}k_{i}} \; \frac{d^{\sum_{i=1}^{n}k_{i}}}{d^{k_{1}}t_{1} d^{k_{2}}t_{2} \cdots d^{k_{n}}t_{n}} \; \sum_{\ell=0}^{\infty} (-\frac{1}{2}(t^{\top}\Sigma t))^{\ell}/\ell! \mid _{t=0}
+\end{equation}
+
+Since $\sum_{i=1}^{n}k_{i}$ is even, the term $i^{-\sum_{i=1}^{n}k_{i}} = (-1)^{-\sum_{i=1}^{n}k_{i}/2}$.
+We note that the term $i^{-\sum_{i=1}^{n}k_{i}}$ will ultimately cancel with the negative in the infinite sum,
+and will be omitted for convenience in notation.
+
+The expression in $t$ is
+\begin{equation}
+t^{\top}\Sigma t = \sum_{ij} \sigma_{ij}t_{i}t_{j}
+\end{equation}
+We need to find the coefficient of $t_{1}^{\ell_{1}}t_{2}^{\ell_{2}}\cdots t_{n}^{\ell_{n}}$ in
+\begin{equation}
+(t^{\top}\Sigma t)^{\ell} = (\sum_{ij} \sigma_{ij}t_{i}t_{j})^{\ell} =  \sum_{ij} \sigma_{ij}t_{i}t_{j}  \; \cdots \;  \sum_{ij} \sigma_{ij}t_{i}t_{j}
+\end{equation}
+All products in the elements of the sum will occur.
+Any product will be obtained by choosing $\sigma_{ij}t_{i}t_{j}$ a certain number of times, say $\ell_{ij}$.
+Since one term is chosen from each of $\ell$ terms, $\sum_{ij} \ell_{ij} = \ell$.
+Further, for any such matrix $(\ell_{ij})$, there will be a term, since it can be constructed by choosing
+$\sigma_{ij}t_{i}t_{j}$ from the first $\ell_{ij}$ terms, and so forth for each $(ij)$ until $\ell$ is exhausted.
+For any $(\ell_{ij})$ there are
+\begin{equation}
+\left( \begin{array}{c}
+\ell  \\
+\ell_{11} \dots \ell_{nn}
+\end{array}
+\right)
+\end{equation}
+ways to choose the terms, where this is the multinomial coefficient.
+So,
+\begin{equation}
+(\sum_{ij} \sigma_{ij}t_{i}t_{j})^{\ell} =
+\sum_{\{(\ell_{ij})\mid \sum_{ij}\ell_{ij} = \ell\}} \;\; \left( \begin{array}{c}
+\ell  \\
+\ell_{11} \dots \ell_{nn}
+\end{array}
+\right)
+\;\; \prod_{ij} (\sigma_{ij}t_{i}t_{j})^{\ell_{ij}}
+\end{equation}
+\begin{equation}
+\label{sigmasum}
+ =
+\sum_{\{(\ell_{ij})\mid \sum_{ij}\ell_{ij} = \ell\}} \;\;
+\left( \begin{array}{c}
+\ell  \\
+\ell_{11} \dots \ell_{nn}
+\end{array}
+\right)
+\;\; \prod_{ij}\sigma_{ij}^{\ell_{ij}} \;\; \prod_{ij}(t_{i}t_{j})^{\ell_{ij}}
+\end{equation}
+
+For the moment, we distinguish between $\sigma_{ij}$ and $\sigma_{ji}$ as symbols.
+As a result, each $\prod_{ij}\sigma_{ij}^{\ell_{ij}}$ is unique as determined by unique $(\ell_{ij})$.
+However, $t_{i}t_{j}= t_{j}t_{i}$, so
+since each $\sigma_{ij}$ is combined with two $t$'s, the total exponent in $t$ is $2\ell$.
+That is, a term $t_{1}^{\ell_{1}}t_{2}^{\ell_{2}}\cdots t_{n}^{\ell_{n}}$ must have
+$\sum_{i=1}^{n} \ell_{i} = 2\ell$.
+We need to determine the terms for which, for any $(\ell_{1},\dots, \ell_{n})$,
+\begin{equation}
+\prod_{ij}(t_{i}t_{j})^{\ell_{ij}} = t_{1}^{\ell_{1}} \cdots t_{n}^{\ell_{n}}
+\end{equation}
+We will get $t_{k}$ in the product in the following mutually exclusive cases:
+\begin{equation}
+\begin{array}{lc}
+\rm{Condition}  & \rm{Exponent \; of} \; t_{k}  \\
+\hline
+i=k, j\neq k  & 1\\
+i\neq k, j= k & 1\\
+i = j = k & 2\\
+\end{array}
+\end{equation}
+So the exponent of $t_{k}$ will be
+\begin{equation}
+\sum_{i=k, j\neq k} \ell_{ij} + \sum_{i\neq k, j=k} \ell_{ij} + 2\ell_{kk}
+\end{equation}
+This sum is obtained by adding the sum of $\ell_{ij}$ across row $k$ to the sum across column $k$,
+since the diagonal element $k$ occurs in both sums.
+That is, we get
+\begin{equation}
+\sum_{i} \ell_{ik} + \sum_{j} \ell_{kj} = \sum_{i} (\ell_{ik} + \ell_{ki}) = \ell_{k}
+\end{equation}
+We can now partition the set of $(\ell_{ij})$ in Equation~\ref{sigmasum} according to these sums, that is, $\{\ell_{k},k=1\dots n\}$.
+As stated before, the sum of the exponents, $\ell_{k}$, must be $2\ell$.
+\begin{multline}
+(\sum_{ij} \sigma_{ij}t_{i}t_{j})^{\ell} = \\
+\sum_{\{(\ell_{1},\dots \ell_{n})\mid \sum_{k}\ell_{k} = 2\ell\}}
+\sum_{\{(\ell_{11},...,\ell_{nn})\mid\sum_{i}(\ell_{ik}+\ell_{ki})=\ell_{k},k=1\dots n\}}
+\left(
+\left( \begin{array}{c}
+\ell  \\
+\ell_{11} \dots \ell_{nn}
+\end{array}
+\right)
+ \prod_{ij}\sigma_{ij}^{\ell_{ij}}\right) \prod_{i=1}^{n}t_{i}^{\ell_{i}}
+\end{multline}
+
+
+Since differentiation is distributive with respect to addition and multiplication by constants,
+the derivative of the product of $t$s can be determined from the derivatives of the individual terms:
+\begin{equation}
+\frac{d^{\sum_{i=1}^{n}k_{i}}}{d^{k_{1}}t_{1} d^{k_{2}}t_{2} \cdots d^{k_{n}}t_{n}} \; \prod_{i=1}^{n} t_{i}^{\ell_{i}} =
+\prod_{i=1}^{n} \; \frac{d^{k_{i}}}{d t_{i}^{k_{i}}} \;  t_{i}^{\ell_{i}}
+\end{equation}
+
+\begin{equation}
+ = \prod_{i=1}^{n} \; I\{k_{i}\leq \ell_{i}\}\frac{\ell_{i}!}{(\ell_{i}-k_{i})!}t_{i}^{\ell_{i}-k_{i}}
+\end{equation}
+
+Thus,
+\begin{multline}
+\frac{d^{\sum_{i=1}^{n}k_{i}}}{d^{k_{1}}d^{k_{2}}\cdots d^{k_{n}}}(\sum_{ij} \sigma_{ij}t_{i}t_{j})^{\ell} = \\
+\sum_{\{(\ell_{1},...,\ell_{n})\mid\sum_{i}\ell_{i} = 2\ell\}}
+\sum_{\{(\ell_{11},\ell_{12},...,\ell_{nn})\mid\sum_{i}(\ell_{ih}+\ell_{hi})=\ell_{h},h=1,\dots,n\}}
+\left(
+\left( \begin{array}{c}
+\ell  \\
+\ell_{11} \dots \ell_{nn}
+\end{array}
+\right)
+   \prod_{ij}\sigma_{ij}^{\ell_{ij}}\right) \\
+    \prod_{i=1}^{n} I\{k_{i}\leq \ell_{i}\}\frac{\ell_{i}!}{(\ell_{i}-k_{i})!}t_{i}^{\ell_{i}-k_{i}}
+\end{multline}
+
+
+Incorporating the constants from Equation~\ref{chareq}, noting again that the negative signs will cancel, the full sum is
+\begin{multline}
+\sum_{\ell=0}^{\infty} \;\; (\frac{1}{2})^{\ell}/\ell!   \sum_{\{(\ell_{1},...,\ell_{n})\mid\sum_{i}l_{i} = 2\ell\}}  \left(
+\sum_{\{(\ell_{11},\ell_{12},...,\ell_{nn})\mid\sum_{j}(\ell_{hj}+\ell_{jh})=\ell_{i},h=1,\dots,n\}}
+\left( \begin{array}{c}
+\ell  \\
+\ell_{11} \dots \ell_{nn}
+\end{array}
+\right)
+\prod_{ij}\sigma_{ij}^{\ell_{ij}}\right)  \\
+\prod_{i=1}^{n} I\{k_{i}\leq \ell_{i}\}\frac{\ell_{i}!}{(\ell_{i}-k_{i})!}t_{i}^{\ell_{i}-k_{i}}
+\end{multline}
+
+Setting $t=0$, only terms with $\ell_{i}=k_{i}$ for all $i$ will remain.
+Otherwise, the only $\ell$ in the infinite sum which occurs is for $\ell = \sum_{i=1}^{n} k_{i}/2$.
+So this reduces to
+\begin{equation}
+(\frac{1}{2})^{\sum_{i=1}^{n} k_{i}/2}/(\sum_{i=1}^{n} k_{i}/2)! \;\; \left(
+\sum_{\{(\ell_{11},...,\ell_{nn})\mid\sum_{j}(\ell_{hj}+\ell_{jh})=k_{i},h=1,\dots,n\}}
+\left( \begin{array}{c}
+\sum_{i=1}^{n} k_{i}/2  \\
+\ell_{11} \dots \ell_{nn}
+\end{array}
+\right)
+\prod_{ij}\sigma_{ij}^{\ell_{ij}}\right)\,\, \prod_{i=1}^{n} k_{i}!
+\end{equation}
+Rearranging the terms, we have
+\begin{equation}
+m_{k_{1},...,k_{n}} = C \sum_{\{(\ell_{11},\ell_{12},...,\ell_{nn})\mid\sum_{j=1}^{n}(\ell_{jh}+\ell_{hj})=k_{h}, h=1,...,n\}}
+\left( \begin{array}{c}
+\sum_{i=1}^{n} k_{i}/2  \\
+\ell_{11} \dots \ell_{nn}
+\end{array}
+\right)
+\prod_{ij}\sigma_{ij}^{\ell_{ij}}
+\end{equation}
+where
+\begin{equation}
+C = \frac{1}{2}^{\sum_{i=1}^{n} k_{i}/2}(\prod_{i=1}^{n} k_{i}!)/(\sum_{i=1}^{n} k_{i}/2)!
+\end{equation}
+
+This formula shows that evaluating $m_{k_{1},...,k_{n}}$ symbolically requires enumerating
+all $n \times n$-dimensional matrices of non-negative integers, $(\ell_{ij})$, which satisfy the condition
+\begin{equation}
+\label{criterion}
+\sum_{j=1}^{n}(\ell_{ji}+\ell_{ij})=k_{i}, \;\;\; i=1,...,n
+\end{equation}
+
+
+Conceding now that the symbols $\sigma_{ij}$ and $\sigma_{ji}$ signify the same entity,
+we can search for $(\ell_{ij})$ by looking only at terms $\prod_{ij}\sigma_{ij}^{\ell_{ij}}$ for which $i \leq j$.
+In fact, any other matrix for the term can be obtained by decrementing $\ell_{ij}$ and incrementing $\ell_{ji}$ by the same integer
+for one or more subscripts for which $i < j$.
+For any $\sigma_{ij}^{\ell_{ij}}$ in the term, this can be done in $\ell_{ij}+1$ ways.
+So there are a total of $\prod_{i < j} (\ell_{ij}+1)$ transpositions.
+The multinomial coefficients derived above must be applied separately to each of these $(\ell_{ij})$ matrices.
+Thus, the full coefficient for a matrix will include as a multiplier
+the sum of these coefficients over all of the $\prod_{i < j} (\ell_{ij}+1)$ transposed matrices.
+Let $\Upsilon$ be the set of upper-triangular integer matrices, and, for any $(\ell_{ij}) \in \Upsilon$,
+let $\Lambda((\ell_{ij}))$ be the set of all integer matrices $(h_{ij})$ obtained by so transposing $(\ell_{ij})$.
+Then the sum above can be decomposed in terms of $\Upsilon$ and $\Lambda((\ell_{ij}))$ for each $(\ell_{ij}) \in \Upsilon$:
+\begin{multline}
+m_{k_{1},...,k_{n}} = \\
+C \sum_{\{(\ell_{11},\ell_{12},...,\ell_{nn})\in \Upsilon \mid\sum_{j=1}^{n}(\ell_{jh}+\ell_{hj})=k_{h}, h=1,...,n\}}
+                      \sum_{\{(h_{ij}) \in \Lambda((\ell_{ij}))\}}
+\left( \begin{array}{c}
+\sum_{i=1}^{n} k_{i}/2  \\
+h_{11} \dots h_{nn}
+\end{array}
+\right)
+\prod_{ij}\sigma_{ij}^{h_{ij}}
+\end{multline}
+But by symmetry, the products in $(\sigma_{ij})$ are the same for each member of $\Lambda((\ell_{ij}))$,
+specifically $\prod_{ij}\sigma_{ij}^{\ell_{ij}}$.
+So the final formula is
+\begin{multline}
+\label{basicformula}
+m_{k_{1},...,k_{n}} =
+\left[ \frac{1}{2}^{\sum_{i=1}^{n} k_{i}/2}(\prod_{i=1}^{n} k_{i}!)/(\sum_{i=1}^{n} k_{i}/2)! \right] \\
+\sum_{\{(\ell_{11},\ell_{12},...,\ell_{nn})\in \Upsilon \mid\sum_{j=1}^{n}(\ell_{jh}+\ell_{hj})=k_{h}, h=1,...,n\}}
+\left[
+\sum_{\{(h_{ij}) \in \Lambda((\ell_{ij}))\}}
+\left( \begin{array}{c}
+\sum_{i=1}^{n} k_{i}/2  \\
+h_{11} \dots h_{nn}
+\end{array}
+\right)
+\right]
+\prod_{ij}\sigma_{ij}^{\ell_{ij}}
+\end{multline}
+
+
+\section{Discussion}
+
+
+Formula~\ref{basicformula} was implemented in \proglang{R} \citep{Rcitation} with a recursive function
+that determines the set of upper-triangular integer matrices that satisfy Criterion~\ref{criterion}.
+A second function calculates their associated coefficients.
+Additional functions were written to create {\LaTeX} \citep{latexcitation} code to display the moments symbolically,
+and to calculate the moments for specified variance-covariance matrices.
+
+The potential for complexity in these computations is seen from the results in Table~\ref{examples}.
+In this table, $n$  is the dimension of the multivariate vector and
+$\#(\sigma_{ij})$  is the number of distinct elements in the variance-covariance matrix, $N = \frac{n(n+1}{2}$.
+{\it Size} is measured by two values, $M$ and $r$.
+$M$ is the total of the exponents of the moment, $M = \sum_{i=1}^{n} k_{i}$.
+The value $r$ is the number of terms for a moment $E[X_{1}^{1},...,X_{n}^{1}]$ with all exponents equal to $1$,
+which is $(2M-1)!/(2^{M-1}(M-1)!)$  \citep{wikipedia}.
+{\it Example} is a moment of the given {\it Size}.
+{\it Potential Terms} is a maximum for the number of $(\ell_{ij})$ matrices to be checked for this example,
+determined as the product of $1+\max(k_{i},k_{j})$ over $i\neq j$
+times the product of $1+[k_{i}/2]$ over $i$, where $[\, ]$ denotes truncation.
+The last column, {\it \# Terms}, is the actual number of terms in the moment as determined by the functions.
+\begin{sidewaystable}
+
+
+\begin{center}
+\vspace{.1in}
+\begin{tabular}{|lcccccc|}
+\hline
+$n$  &   $\#(\sigma_{ij})$   & \multicolumn{2}{c}{Size}    & Example & Potential Terms     &  \# Terms  \\
+\hline
+  & $N$  &  $M$  &   $r$    & $E[X_{1}^{k_{1}} \cdots X_{n}^{k_{n}}]$ &  &  \\
+\hline
+2 &  3  & 2   & 1              & $E[X_{1}^{1}X_{2}^{1}]$                    &       2          &       1 \\
+2 &  3  & 6   & 15             & $E[X_{1}^{3}X_{2}^{3}]$                    &        16         &       2 \\
+2 &  3  & 20  & 654,729,075      & $E[X_{1}^{10}X_{2}^{10}]$                  &        396         &       6 \\
+4 &  10 & 8   & 105            & $E[X_{1}^{2}X_{2}^{2}X_{3}^{2}X_{4}^{2}]$  &        11,664         &       17 \\
+4 &  10 & 12  & 10,395          & $E[X_{1}^{1}X_{2}^{3}X_{3}^{4}X_{4}^{4}]$  &     225,000            &       27 \\
+4 &  10 & 20  &  654,729,075 & $E[X_{1}^{5}X_{2}^{5}X_{3}^{5}X_{4}^{5}]$  &     3,779,136            &       306 \\
+6 &  21 & 12  & 10,395 & $E[X_{1}^{2}X_{2}^{2}X_{3}^{2}X_{4}^{2}X_{5}^{2}X_{6}^{2}]$  & 918,330,048    &     388 \\
+6 &  21 & 18  & 34,459,425 & $E[X_{1}^{1}X_{3}^{2}X_{3}^{3}X_{4}^{4}X_{5}^{4}X_{6}^{4}]$  &  $1.265625\times 10^{12}$   &  2,082 \\
+8 &  36 & 16  & 2,027,025 & $E[X_{1}^{2}X_{2}^{2}X_{3}^{2}X_{4}^{2}X_{5}^{2}X_{6}^{2}X_{7}^{2}X_{8}^{2}]$ &   $5.856459\times 10^{15}$             & 18,155  \\
+8 &  36 & 24  & 316,234,143,225 & $E[X_{1}^{3}X_{2}^{3}X_{3}^{3}X_{4}^{3}X_{5}^{3}X_{6}^{3}X_{7}^{3}X_{8}^{3}]$ &   $1.844674\times 10^{19 }$ & $\geq 287,800^{*}$  \\
+9 &  45 & 18  & 34,459,425 & $E[X_{1}^{2}X_{2}^{2}X_{3}^{2}X_{4}^{2}X_{5}^{2}X_{6}^{2}X_{7}^{2}X_{8}^{2}X_{9}^{2}]$ &  $7.68484 \times 10^{19 }$     & 6,763,895  \\
+\hline
+\end{tabular}
+\caption{\label{examples}Examples of sizes of moment problem
+(*: The function aborted after 2 days due a space allocation problem.)}
+\end{center}
+\end{sidewaystable}
+
+
+
+It is clear that computation of high-order moments will be very intensive.
+Kan reports similar computational difficulties.
+More efficient or targeted algorithms for searching the matrices in Criterion~\ref{criterion} would allow
+higher order moments to be computed.
+However, it is likely that the problem is intractable as described by \cite{garey79}.
+For example,
+symbolic computation of the central moments $E[X_{1}^{k_{1}} \cdots X_{n}^{k_{n}}]$
+for $(k_{1},...,k_{n}) < (k,...,k)$ for a fixed $k$ may be NP-hard in $n$ ,
+or computation of $E[X_{1}^{k_{1}} \cdots X_{n}^{k_{n}}]$ may be NP-hard in $\max(k_{1},\dots,k_{n})$
+for fixed $n$.
+
+The formula derived here could be expanded to incorporate mean terms,
+which would allow computation of non-central moments.
+These moments could also be used to approximate other integrals
+integrated against the multivariate normal distribution by
+using a Taylor expansion in several variables \citep{fulks61}.
+Such an approximation would be a linear combination
+of non-central moments.
+
+Finally, Criterion~\ref{criterion} might arise in other contexts, such as networks \citep{networkcitation}.
+For example, suppose that there are $n$ airports and airport $i$ can accommodate $k_{i}$ arrivals or departures on a day,
+where a plane may take off and land at the same airport.
+This network is illustrated in Figure~\ref{airportnetwork}.
+The problem is to determine the set of flights between airports that totally expend the capacities, $k_{i}$, of all airports.
+For this problem, $\ell_{ij}$ represents the number of flights from airport $i$ to airport $j$,
+and $\ell_{ii}$ is the number of flights which start and end at airport $i$.
+The set of flights is the set satisfying Criterion~\ref{criterion}.
+\setcounter{figure}{0}
+\begin{figure}[th]
+\label{airportslabel}
+\begin{center}
+\setlength{\unitlength}{.1in}
+
+\begin{picture}(40,5)
+
+\put(16,2){\circle{5}}
+\put(15.4,1.8){$k_{i}$}
+
+\put(26,2){\circle{5}}
+\put(25.4,1.8){$k_{j}$}
+
+\put(18,3.5){\vector(1,0){5.8}}
+\put(20.6,4.5){$\ell_{ij}$}
+\put(23.8,0.5){\vector(-1,0){5.8}}
+\put(20.6,-1.2){$\ell_{ji}$}
+
+\put(13.9,3.5){\vector(1,0){.2}}
+\put(13.735,2){\oval(5.15,3)[l]}
+\put(9.2,2){$\ell_{ii}$}
+
+\put(28.1,3.5){\vector(-1,0){.2}}
+\put(28.2,2){\oval(5.15,3)[r]}
+\put(31.7,2){$\ell_{jj}$}
+
+\end{picture}
+
+\end{center}
+\caption{\label{airportnetwork}Airport capacity network.}
+\end{figure}
+
+
+
+\section[R functions to compute normal multivariate moments]{\proglang{R} functions to compute normal multivariate moments}
+\label{rprogram}
+In the \proglang{R} functions to compute the central moments,
+upper-triangular matrices $(\ell_{ij})$ for $n$ dimensions are represented as vectors of length $n(n+1)$,
+with row 1 followed by row 2, etc.
+For example, for $n=2$, $(\ell_{ij})$ is represented as $(\ell_{11},\ell_{12},\ell_{22})$.
+Each such matrix represents the exponents for a single product of $\sigma_{ij}$s.
+For example, $(1,2,0)$ represents $\sigma_{11}^{1}\sigma_{12}^{2}\sigma_{22}^{0} = \sigma_{11}\sigma_{12}^{2}$.
+The representations are accumulated and stored internally, raising the possibility of
+space allocation problems as encountered in the second to last example in Table~\ref{examples}.
+This problem could be alleviated by saving the representation matrix to a file instead.
+
+The function \code{multmoments} searches the integer matrices for those satisfying Criterion~\ref{criterion}.
+This is a recursive function which implements a branch-and-bound algorithm.
+The function \code{multmoments} is called by \code{callmultmoments}.
+This function initializes variables,
+determines the coefficients of the terms from the upper-triangular representations,
+and returns a list consisting of the original moment vector, the set of representations,
+and the corresponding set of coefficients.
+This list is set to class \code{moment}.
+The \code{moment} class has four methods: \code{print}, \code{toLatex}, \code{evaluate}, and \code{simulate}.
+
+
+The \code{print} method prints a moment object, usually the output of \code{callmultmoments},
+showing a mathematical representation of the moment,
+followed by the rows of the representation with the corresponding coefficient attached.
+
+
+The \code{toLatex} method uses a moment object, usually the output of \code{callmultmoments},
+to determine the {\LaTeX} code for the moment sorted lexicographically.
+Note that it inserts double backslashes where {\LaTeX} requires a backslash;
+these can be reset to single backslashes by writing the output to a file using the \proglang{R} base function \code{writeLines},
+as illustrated below.
+
+The \code{evaluate} method determines the value of a \code{moment} object for
+a specified variance-covariance matrix $\Sigma$, which must be represented as an upper-triangular matrix
+in vector form.
+
+The \code{simulate} method uses Monte Carlo integration \cite{rizzo08} to numerically approximate a \code{moment} object
+for a specified mean and variance-covariance matrix $\Sigma$ (represented as a square matrix
+in vector form), with a specified number of random samples.
+Note that \code{simulate} uses only the moment definition, not the representation,
+so can be used with any moment in vector notation by converting the vector to a moment object.
+The \code{simulate} method uses the \code{rmvnorm} function from the \pkg{mvtnorm} package \citep{mvtnorm08}.
+
+Computation of the moments was validated by comparison to specific published cases and to known types such as $E[X^{k}]$ and $E[X_{1}^{1},\dots X_{n}^{1}]$,
+through consistency checks, and to comparison to numerically-computed moments.
+For consistency, the representations for moments which are permutations of each other must be the same within ordering across rows and columns;
+for example, $E[X_{1}^{2}X_{2}^{4}]$ and $E[X_{1}^{4}X_{2}^{2}]$ have the same representations within ordering.
+Also, a moment containing one or more odd powers will evaluate to 0 for a specified covariance matrix if the component of the random variable corresponding to one of the
+odd powers is independent of the other components, that is, if the off-diagonal covariance terms are zero for this component.
+The functions were confirmed to have this property for a number of cases.
+
+Further validation was done using Monte Carlo integration.
+Various moments of dimension up to six were compared for two values of the covariance matrix,
+the identity matrix and a covariance matrix computed from ten random normal vectors obtained using the identity covariance matrix
+and then adding 1 to the diagonal elements to increase the variability.
+Forty estimates of the moment were then computed using the \code{simulate} method, each obtained from one million randomly generated multivariate normal vectors.
+From these estimates, 95\% confidence intervals were computed and compared to the moment estimates using the \code{estimate} method.
+In the 37 experiments done using an identity matrix, the moments computed from the symbolic representations fell outside the confidence interval
+in three (8.1\%) of the cases.
+However, in all three cases \code{callmultmoments} produced the value of zero,
+which is correct since the moments contained odd  powers and the components of the vectors were independent.
+In the 37 experiments done using a randomly-generated matrix, the moments computed from the symbolic representations fell outside the confidence interval
+in two (5.4\%) of the cases ($E[X_{1}^{2}X_{2}^{9}X_{3}^{11}]$ and $E[X_{1}^{2}X_{2}^{4}X_{3}^{7}X_{4}^{7}X_{5}^{8}]$), where the symbolically computed values
+lay slightly outside the confidence intervals.
+These two cases were run again using five million random normal vectors for each of the 40 estimates,
+and the moments computed from the symbolic representations fell inside the confidence intervals.
+These results provide further evidence that the functions given here are correct,
+and in fact are superior to numerical integration in obtaining moments,
+since it only requires a simple evaluation of a polynomial with integer coefficients.
+Numerical integration using adaptive methods was also implemented but worked poorly for higher dimensions \citep{kuonen03}.
+
+\section{Examples of computing central moments}
+
+The following moment is computed using the code given below:
+\begin{multline}
+\label{m1234example}
+<<m1234, echo=FALSE, results=tex>>=
+writeLines(toLatex(callmultmoments(c(1,2,3,4))))
+@
+\end{multline}
+The use of the \code{toLatex} and \code{evaluate} methods and \code{writeLines}
+is also illustrated.
+The file created by \code{writeLines} can be included in a {\LaTeX} document using the \verb+\input+ command,
+or can be included in Sweave as done here.
+
+
+\subsubsection*{Compute the representation of a central moment (\code{callmultmoments})}
+The following code calculates a central moment and shows the three components, \code{moment}, \code{representation}, and \code{coefficients}.
+<<callmultmoments>>=
+m1234 <- callmultmoments(c(1,2,3,4))
+unclass(m1234)
+@
+
+
+\subsubsection*{Print a representation of a central moment (\code{print} method)}
+
+The following shows the result of using the \code{print} method with the moment in Equation~\ref{m1234example}.
+
+<<print-method>>=
+m1234
+@
+
+
+\subsubsection*{Compute the {\LaTeX} representation of a central moment (\code{toLatex} method)}
+
+The following shows the computation of the representation of the central moment in Equation~\ref{m1234example}.
+
+<<toLatex-method>>=
+toLatex(m1234)
+@
+The \LaTeX representation can be written to a file using the \code{writeLines} function as follows:
+<<toLatex-method2, eval=FALSE>>=
+writeLines(toLatex(m1234), "yourfilename")
+@
+
+\subsubsection*{Compute a value of a central moment (\code{evaluate} method)}
+
+ 
+The code below evaluates the moment at the following variance-covariance matrix:
+<<covariance,echo=FALSE>>=
+matrix(c(4,2,1,1,2,3,1,1,1,1,2,1,1,1,1,2),nrow=4)
+@
+
+<<evaluate-method>>=
+evaluate(m1234, c(4, 2, 1, 1, 3, 1, 1, 2, 1, 2))
+@
+
+
+\subsubsection*{Estimate a central moment using simulation (\code{simulate} method)}
+
+The value of $E[ X_{ 1 }^{ 1 } X_{ 2 }^{ 2 } X_{ 3 }^{ 3 } X_{ 4 }^{ 4 } ]$ when
+$X$ has a normal distribution with mean $\mu = (1,2,0,3)$ and the same variance-covariance matrix
+as above could be estimated using \code{simulate} with $1000$ random samples:
+
+<<simulate-method>>=
+simulate(m1234, 1000, NULL, c(1, 2, 0, 3),
+  c(4, 2, 1, 1, 2, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2))
+@
+
+
+\section*{Acknowledgments}
+
+The author would like to thank Dr.~Robin Hankin and Dr.~Achim Zeileis for several suggestions and assistance in constructing the \pkg{symmoments} package.
+
+\bibliography{moments}
+
+\end{document}
