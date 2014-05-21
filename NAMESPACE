@@ -1,10 +1,23 @@
 import("stats", "utils")
+importFrom("cubature","adaptIntegrate")
 importFrom("mvtnorm", "rmvnorm")
+importFrom("combinat", "fact")
+importFrom("multipol","as.multipol")
 
 export(
-  "callmultmoments",
   "evaluate",
-  "multmoments"    
+  "callmultmoments",
+  "toLatex_noncentral",
+  "convert.mpoly",
+  "convert.multipol",
+  "evaluate_noncentral",
+  "evaluate_expected.polynomial",
+  "make.all.moments",
+  "tounsorted",
+  "integrate.polynomial",
+  "toMoment",
+  "toNewick",
+  "toMatching"   
 )
 
 S3method("evaluate", "moment")

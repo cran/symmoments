@@ -1,15 +1,17 @@
 Package: symmoments
 Type: Package
-Title: Symbolic central moments of the multivariate normal distribution
-Version: 1.1
-Date: 2010-01-20
+Title: Symbolic central and noncentral moments of the multivariate
+        normal distribution
+Version: 1.2
+Date: 2014-05-21
 Author: Kem Phillips
-Depends: mvtnorm
+Depends: mvtnorm, cubature, combinat, multipol
+Suggests: mpoly, ape
 Maintainer: Kem Phillips <kemphillips@comcast.net>
-Description: Symbolic central moments of the multivariate normal distribution. Computes a standard representation, LateX code, and values at specified covariance matrices.
+Description: Symbolic central and non-central moments of the multivariate normal distribution. Computes a standard representation, LateX code, and values at specified mean and covariance matrices.
 License: GPL
 LazyLoad: yes
-Packaged: 2014-02-23 14:36:03 UTC; Kem
+Packaged: 2014-08-04 11:12:55 UTC; Kem
 NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2014-02-23 19:41:58
+Date/Publication: 2014-08-04 15:29:55

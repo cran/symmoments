@@ -1,18 +1,19 @@
-\documentclass[nojss]{jss}
-\usepackage{amsmath,rotating,thumbpdf}
+\documentclass[codesnippet]{jss}
 
-%% need no \usepackage{Sweave}
-\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
-%\VignetteIndexEntry{R Functions to Symbolically Compute the Central Moments of the Multivariate Normal Distribution}
-%\VignetteDepends{symmoments,mvtnorm}
-%\VignetteKeywords{central moments, multivariate normal distribution, symbolic computation, R, LaTeX}
-%\VignettePackage{symmoments}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% declarations for jss.cls %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\author{Kem Phillips\\Sourland Biostatistics}
-\title{\proglang{R} Functions to Symbolically Compute the Central Moments of the Multivariate Normal Distribution}
-\Plaintitle{R Functions to Symbolically Compute the Central Moments of the Multivariate Normal Distribution}
-\Shorttitle{Symbolic Computation of the Central Moments of the Multivariate Normal Distribution}
+%% almost as usual
+\author{Kem Phillips}
+\title{R Functions to Symbolically Compute the Central and Non-central Moments of the Multivariate Normal Distribution}
 
+%% for pretty printing and a nice hypersummary also set:
+%%Plainauthor{Achim Zeileis, Second Author} %% comma-separated
+%%Plaintitle{A Capitalized Title: Something About a Package foo} %% without formatting
+\Shorttitle{Expected Values of Functions of a Multivariate Normal Random Variable} %% a short title (if necessary)
+
+%% an abstract and keywords
 \Abstract{The central moments of the multivariate normal distribution are functions of
 its $n \times n$ variance-covariance matrix $\Sigma$.
 These moments can be expressed symbolically as linear combinations of products of powers of the elements of $\Sigma$.
@@ -21,32 +22,54 @@ The formula requires searching integer matrices for matrices
 whose $n$ successive row and column sums equal the $n$ exponents of the moment.
 This formula is implemented in R, with
 \proglang{R} functions to display moments in {\LaTeX}
- and to evaluate moments at specified variance-covariance matrices are included.}
+ and to evaluate moments at specified variance-covariance matrices are included.
+ 
+ This vignette also describes how the \code{symmoments} package has been augmented
+to calculate symbolic representations of non-central multivariate moments,
+and to calculate the expected value of such moments as well as the expected value of multivariate polynomials.
+In addition, it is shown that first non-central multivariate moments
+are in a one-to-one relationship to phylogenetic trees.
+Functions making this correspondence, as well as a function for the correspondence with matchings are provided.
+}
 
-\Keywords{central moments, multivariate normal distribution, symbolic computation, \proglang{R}, \LaTeX}
-\Plainkeywords{central moments, multivariate normal distribution, symbolic computation, R, LaTeX}
+\Keywords{non-central moments, multivariate Normal distribution, symbolic computation, multivariate polynomials, phylogenetic trees, \proglang{R}, \LaTeX}
+\Plainkeywords{non-central moments, multivariate Normal distribution, symbolic computation, multivariate polynomials, phylogenetic trees, R, Latex} %% without formatting
+%% at least one keyword must be supplied
 
-\Volume{33}
-\Issue{1}
-\Month{January}
-\Year{2010}
-\Submitdate{2009-05-21}
-\Acceptdate{2009-11-20}
+%% publication information
+%% NOTE: Typically, this can be left commented and will be filled out by the technical editor
+%% \Volume{13}
+%% \Issue{9}
+%% \Month{September}
+%% \Year{2004}
+%% \Submitdate{2004-09-29}
+%% \Acceptdate{2004-09-29}
 
+%% The address of (at least) one author should be given
+%% in the following format:
 \Address{
   Kem Phillips \\
-  314 Rileyville Road \\
-  Ringoes \\
-  NJ, 08551, United States of America \\
-  E-mail: \email{kemphillips@comcast.net}
-}
+  PO Box 434 \\
+  Cavendish \\
+  VT 05142 USA \\
+  E-mail: \email{kemphillips@comcast.net}\\}
+
+%% It is also possible to add a telephone and fax number
+%% before the e-mail in the following format:
+%% Telephone: +43/1/31336-5053
+%% Fax: +43/1/31336-734
+
+%% for those who use Sweave please include the following line (with % symbols):
+%% need no \usepackage{Sweave.sty}
+
+%% end of declarations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \VignetteIndexEntry{R Functions to Symbolically Compute the Central and Non-central Moments of the Multivariate Normal Distribution}
+\usepackage{amsmath,rotating,thumbpdf}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
 
 \begin{document}
 
-<<preliminaries, echo=FALSE, results=hide>>=
-options(prompt = "R> ", continue = "+  ")
-library("symmoments")
-@
 
 \section{Introduction}
 \label{intro}
@@ -111,9 +134,13 @@ to derive an expression for the distribution's moments (their Theorem 2) based o
 This article develops a new explicit formula for the moments starting with the
 derivatives of the characteristic function.
 The expression for the moments is based on a search algorithm over certain integer matrices.
-The final goal of this paper is to translate this formula into \proglang{R} functions
+This formula has been translated into \proglang{R} functions
 that produce symbolic representations of
 moments in terms of the variance-covariance terms $\sigma_{ij}$.
+In addition, a formula for non-central moments is developed based on central moments.
+This formula is programmed, and is extended to the expected values of multivariate polynomials.
+Finally, it is shown that first central moments are equivalent to phylogenetic trees, 
+and \proglang{R} functions making this correspondence are described. 
 
 The functions described here are based on \cite{phillips10}, and
 are available in the package \pkg{symmoments} implemented in the \proglang{R} system for
@@ -122,8 +149,7 @@ statistical computing \citep{Rcitation}. Both \proglang{R} itself and the
 the terms of the General Public License (GPL) from the Comprehensive \proglang{R} Archive Network (CRAN,
 \url{http://CRAN.R-project.org/}).
 
-
-\section{Development of the formula}
+\section{Development of the formula for central moments}
 
 
 The moments of any distribution can be represented by the derivatives of the distribution's characteristic function.
@@ -360,14 +386,261 @@ h_{11} \dots h_{nn}
 \end{multline}
 
 
+\section{Non-central moments}
+\label{nonzeromeans}
+
+We now drop the condition that$\mu = 0$.
+That is, we want to calculate the symbolic representation of $E[X_{1}^{k_{1}}X_{2}^{k_{2}} \cdots X_{n}^{k_{n}}\mid \mu,\Sigma]$, where $X \sim N(\mu,\Sigma)$.
+First, transform to $Y = X -\mu \sim N(0,\Sigma)$, so that $E[Y\mid \mu,\Sigma] = 0$.
+Then, since $X = Y + \mu$,
+\begin{equation}
+E[X_{1}^{k_{1}}X_{2}^{k_{2}} \cdots X_{n}^{k_{n}}\mid \mu,\Sigma] = E[(Y_{1}+\mu_{1})^{k_{1}}(Y_{2}+\mu_{2})^{k_{2}} \cdots (Y_{n}+\mu_{n})^{k_{n}}\mid \mu,\Sigma]
+\end{equation}
+For each term in the product we can choose $Y_{i}$ $l_{i}$ times and $\mu_{i}$ $k_{i}-l_{i}$ times,
+and this can be done in
+\begin{equation}
+\left( \begin{array}{c}
+k_{i}  \\
+l_{i}
+
+\end{array}
+\right)
+\end{equation}
+ways.  So, using the notation $k = (k_{1},k_{2}, \cdots k_{n})$, this is
+\begin{equation}
+(Y_{1}+\mu_{1})^{k_{1}}(Y_{2}+\mu_{2})^{k_{2}} \cdots (Y_{n}+\mu_{n})^{k_{n}} =
+\sum_{0 \leq l \leq k} \;\;
+\;\; \prod_{i=1}^{n}
+\left( \begin{array}{c}
+k_{i}  \\
+l_{i}
+\end{array}
+\right)
+\prod_{i=1}^{n} Y_{i}^{l_{i}} \;\; \prod_{i=1}^{n} \mu_{i}^{k_{i}-l_{i}}
+\end{equation}
+Therefore, since $E[Y_{1}^{l_{1}}Y_{2}^{l_{2}} \cdots Y_{n}^{l_{n}}\mid \mu,\Sigma] = E[Y_{1}^{l_{1}}Y_{2}^{l_{2}} \cdots Y_{n}^{l_{n}}\mid \Sigma] = m_{l_{1},...,l_{n}}$,
+\begin{equation}
+E[X_{1}^{k_{1}}X_{2}^{k_{2}} \cdots X_{n}^{k_{n}}\mid \mu,\Sigma] =
+\sum_{0 \leq l \leq k} \;\;
+\;\; \left(\prod_{i=1}^{n}
+ \left( \begin{array}{c}
+k_{i}  \\
+l_{i}
+\end{array}
+\right)
+ \;\;  \prod_{i=1}^{n} \mu_{i}^{k_{i}-l_{i}}\right) \;\; m_{l_{1},...,l_{n}}
+\end{equation}
+There are $\lceil \prod_{i=1}^{n} (k_{i}+1) \rceil$ such moments. 
+However, since the $m_{l_{1},...,l_{n}}$ are central moments, they are $0$ for odd moments,
+and we need to consider only even moments, although $k$ itself does not have to be even.
+So, this can be written
+\begin{equation}
+\label{basicmean}
+E[X_{1}^{k_{1}}X_{2}^{k_{2}} \cdots X_{n}^{k_{n}}\mid \mu,\Sigma] =
+\sum_{0 \leq l \leq k, \; l \; {\rm even}} \;\;
+\;\; \left(\prod_{i=1}^{n}
+ \left( \begin{array}{c}
+k_{i}  \\
+l_{i}
+\end{array}
+\right)
+ \;\;  \prod_{i=1}^{n} \mu_{i}^{k_{i}-l_{i}}\right) \;\; m_{l_{1},...,l_{n}}
+\end{equation}
+
+This formula involves the symbols 
+$\prod_{i=1}^{n} \mu_{i}^{l_{i}}, {\rm for} \; 0 \leq l \leq k$.
+There are $\prod_{i=1}^{n} (k_{i}+1)$ such "$\mu$-products".
+As a general formula, all these terms are required, but in numerical calculations if any $\mu_{i} = 0$,
+all $\mu$-products containing that $\mu_{i}$ will be $0$.
+
+Each $m_{l_{1},...,l_{n}}$ term in the sum has a unique $\sigma$-product
+(such as $\sigma_{1,4}\sigma_{2,4}^{2}\sigma_{3,3}$),
+so that the $\mu$-products, which are also unique, cannot be combined across $\sigma$-expressions.
+That is, the sum above is the best we can do.
+
+Here is an example of a non-central moment:
+\begin{multline}
+E[X_{1}^{1}X_{2}^{2}X_{3}^{3}\mid \mu,\Sigma]=\\
+  \; \mu_{1}\mu_{2}^{2}\mu_{3}^{3}
+\\
++ 2 \; \mu_{2}\mu_{3}^{3}
+( \sigma_{1,2} )
+ \\
++   \; \mu_{1}\mu_{3}^{3}
+( \sigma_{2,2} )
+ \\
++ 3 \; \mu_{2}^{2}\mu_{3}^{2}
+( \sigma_{1,3} )
+ \\
++ 6 \; \mu_{1}\mu_{2}\mu_{3}^{2}
+( \sigma_{2,3} )
+ \\
++ 3 \; \mu_{3}^{2}
+( 2\sigma_{1,2}\sigma_{2,3}+
+\sigma_{1,3}\sigma_{2,2} )
+ \\
++ 3 \; \mu_{1}\mu_{2}^{2}\mu_{3}
+( \sigma_{3,3} )
+ \\
++ 6 \; \mu_{2}\mu_{3}
+( \sigma_{1,2}\sigma_{3,3}+
+2\sigma_{1,3}\sigma_{2,3} )
+ \\
++ 3 \; \mu_{1}\mu_{3}
+( \sigma_{2,2}\sigma_{3,3}+
+2\sigma_{2,3}^{2} )
+ \\
++   \; \mu_{2}^{2}
+( 3\sigma_{1,3}\sigma_{3,3} )
+ \\
++ 2 \; \mu_{1}\mu_{2}
+( 3\sigma_{2,3}\sigma_{3,3} )
+ \\
++   \;
+( 6\sigma_{1,2}\sigma_{2,3}\sigma_{3,3}+
+3\sigma_{1,3}\sigma_{2,2}\sigma_{3,3}+
+6\sigma_{1,3}\sigma_{2,3}^{2} )
+ \\
+\end{multline}
+
+
+
+\section{Expected Values of Multivariate Polynomials}
+\label{multipol}
+
+
+By a multivariate polynomial, we mean a linear combination of products of powers of the components of $X$.
+That is, if $K$ is a set of exponents $k = (k_{1}, \cdots, k_{r})$, and $\left\{\gamma_{k} \mid k \in K\right\}$ is a corresponding set of constants,
+a multivariate polynomial $p$ is defined as
+\begin{equation}
+p(X_{1}, \cdots X_{r}) = \sum_{k\in K} \; \gamma_{k} \; X_{1}^{k_{1}} \cdots X_{r}^{k_{r}}
+\end{equation}
+For example,
+\begin{equation}
+p(X_{1},X_{2},X_{3}) = 5 + 3 X_{1}X_{2}^{2} +  X_{1}^{2}X_{2}^{3} + X_{3}^{4}
+\end{equation}
+
+Multivariate polynomials are discussed by \cite{hankin08} and \cite{kahle14}.
+Functions for the evaluation and algebra of multivariate polynomials is included in the \code{multipol} and \code{mpoly} packages.
+
+A multivariate polynomial can be integrated against the multivariate normal distribution to give its expected value.
+Since these polynomials are linear combinations of products of powers of the components of $X$,
+their expectations are obtained easily from the corresponding noncentral moments.
+So if $X \sim N(\mu,\Sigma)$, the expectation of the general multivariate polynomial above is
+\begin{equation}
+E[p(X_{1}, \cdots X_{r})\mid \mu,\Sigma]  = \sum_{k\in K} \; \gamma_{k} \; E\left[ X_{1}^{k_{1}} \cdots X_{r}^{k_{r}}\mid \mu,\Sigma \right] 
+\end{equation}
+where the expectations are given in equation \ref{basicmean}.
+Functions to compute these expectations are described below.
+
+
+\section{Multivariate moments, matchings, and phylogenetic trees}
+
+Phylogenetic trees are used to ascertain evolutionary relationships among species \citep{felsenstein2004}.
+A common model is  the rooted, bifurcating tree.
+\cite{diaconis1998} describe such a tree as ``a binary rooted tree with $n$ labeled leaves.''
+Felsenstein (Chapter 3) shows that the number of rooted, bifurcating trees for $n$ species is
+\begin{equation}
+\frac{(2n-3)!}{2^{n-2}(n-2)!}
+\end{equation}
+He also discusses the numbers of distinct shapes of trees and displays these shapes for $n=2$ to $n=6$ species.
+Diaconis and Holmes described how such phylogenetic trees are closely related to matchings.
+
+Surprisingly, at least for computationally feasible values of $n$,
+for the first moment 
+\begin{equation}
+E[X_{1} \cdots X_{2(n-1)}]
+\end{equation}
+the number of upper-triangular integer matrices
+that determine the moment is the same as the number of phylogenetic trees for $n$ species.
+In fact, for any number of species there is a one-to-one correspondence between two seemingly disparate objects,
+phylogenetic trees and the symbolic first central moments of the multivariate normal distribution.
+The correspondence is established through matchings.
+
+
+Diaconis and Holmes define a perfect matching on $2n$ points as a ``pairing of the points into $n$ groups of two.''
+We show that there is a one-to-one correspondence, or bijection,
+between the components of a representation of a multivariate normal first moment
+with $2n$ components and matchings on $2n$ points.
+
+
+
+For any $n$, let $\Lambda (2n)$ be the collection of $2n \times 2n$-dimensional matrices associated with the
+symbolic first moment of the $2n$-dimensional multivariate normal distribution.
+Let $\Gamma (2n)$ be the set of perfect matchings on a set $\Delta$ of $2n$ points.
+
+First suppose that $L = (l_{ij}) \in\Lambda (2n)$. Then criterion \ref{criterion} becomes
+\begin{equation}
+\label{criterion1}
+\sum_{j=1}^{2n}(l_{ji}+l_{ij}) = 1, \;\;\; i=1,...,2n
+\end{equation}
+That is, there is exactly one $l_{ij}=1$
+in the union of the cell in row $k$ and column $k$ for each $1 \leq k \leq n$.
+The sum of these sums over $i$ is twice the total count of cells with $1$s, and is obviously $2n$.
+Therefore, the number of cells containing $1$ is $n$.
+
+
+Let $\gamma = \{(i,j)\mid l_{i,j}=1, i=1,...,2n,j=1,...,2n\}$, that is, the set of cells containing $1$.
+By criterion \ref{criterion1}, for any pair $(i,j) \in \Gamma$, $i \neq j$ since the diagonal terms in the sum occur twice,
+so that if $i = j$ we would have $k_{j} \geq 2$.
+Furthermore, if any two pairs $(i_{1},j_{1})$ and $(i_{2},j_{2})$ were to share a common index, say $i_{1} = j_{2} = h$,
+then the union of row $h$ and column $h$ would have at least two cells containing $1$, leading to $k_{h} \geq 2$.
+Therefore, the indices in these cells are unique, and since there are $n$ cells containing $1$,
+there are $2n$ distinct indices among these cells, namely $1,...,2n$.
+It is clear that $\gamma$ is a perfect matching on this set of indices.
+So for any $L \in \Lambda (2n)$ there corresponds a perfect matching $\gamma$ on $1,...,2n$.
+
+
+Now suppose that $\gamma \in \Gamma (2n)$.
+For specificity, assume that the points in $\gamma$ are numbered $1,...,2n$.
+Order the pairs in $\gamma$ lexicographically by the second components so that for any pair $(i,j)$, $i < j$.
+Let $L = (l_{i,j})$ be a $2n \times 2n$-dimensional matrix of $0$s with the rows and columns labeled $1,...,2n$.
+Set any cell in $L$ corresponding to a pair in $\gamma$ to $1$.
+Since any point occurs in one and only one pair, for any index $i$
+there is one and only one cell in row $i$ and column $i$ with a $1$ in it.
+Every point is in the matching, so for each $i$, there must be a $1$ in
+one cell of row $i$ and column $i$.
+So for any $\gamma \in \Gamma (2n)$ there is an $L \in \Lambda (2n)$.
+
+Invoking the algorithm projecting $\Lambda (2n)$ into $\Gamma (2n)$, the $L$ computed above will be mapped back into the matching just defined.
+That is, these two procedures are inverses.
+
+
+Paradis describes various formats for encoding trees
+and \proglang{R} functions to transform one to another.
+Functions are described below to transform between an \pkg{ape} matching object or Newick format to a moment object.
+Using these functions and the functions \code{read.tree}, \code{write.tree}, \code{as.matching}, and \code{as.phylo.matching}
+from the \pkg{ape} package,
+trees can be transformed among the \code{moment}, \code{matching}, \code{phylo}, and Newick formats.
+Table \ref{matchingfunctions} shows the functions used for each transformation.
+Empty cells can be reached by obvious paths.
+\small
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l|cccc}
+{\textbf{From}} & \multicolumn{4}{c}{\textbf{To}}  \\ \hline
+              &  \underline{Newick}  &  \underline{Phylo}                   &  \underline{Matching}          &  \underline{Moment} \\
+Newick        &    -----------      &  \code{read.tree}          &        & \code{toMoment}   \\
+Phylo         & \code{write.tree}  &     -----------         & \code{as.Matching}   &         \\
+Matching      &    & \code{as.phylo.matching}   &     -----------   &   \code{toMoment}      \\
+Moment        & \code{toNewick}  &    & \code{toMatching}   &  -----------  \\ \hline
+\end{tabular}
+\end{center}
+\caption{Functions for converting between tree formats}
+\label{matchingfunctions}
+\end{table}
+\normalsize
+
+
 \section{Discussion}
 
 
-Formula~\ref{basicformula} was implemented in \proglang{R} \citep{Rcitation} with a recursive function
+Formula~\ref{basicformula} was implemented in \proglang{R} with a recursive function
 that determines the set of upper-triangular integer matrices that satisfy Criterion~\ref{criterion}.
 A second function calculates their associated coefficients.
 Additional functions were written to create {\LaTeX} \citep{latexcitation} code to display the moments symbolically,
-and to calculate the moments for specified variance-covariance matrices.
+and to calculate the moments for specified variance-covariance matrices,
+and these have been augmented with functions for non-central moments.
 
 The potential for complexity in these computations is seen from the results in Table~\ref{examples}.
 In this table, $n$  is the dimension of the multivariate vector and
@@ -413,23 +686,27 @@ $n$  &   $\#(\sigma_{ij})$   & \multicolumn{2}{c}{Size}    & Example & Potential
 
 
 It is clear that computation of high-order moments will be very intensive.
-Kan reports similar computational difficulties.
-More efficient or targeted algorithms for searching the matrices in Criterion~\ref{criterion} would allow
-higher order moments to be computed.
-However, it is likely that the problem is intractable as described by \cite{garey79}.
-For example,
-symbolic computation of the central moments $E[X_{1}^{k_{1}} \cdots X_{n}^{k_{n}}]$
-for $(k_{1},...,k_{n}) < (k,...,k)$ for a fixed $k$ may be NP-hard in $n$ ,
-or computation of $E[X_{1}^{k_{1}} \cdots X_{n}^{k_{n}}]$ may be NP-hard in $\max(k_{1},\dots,k_{n})$
-for fixed $n$.
+The equivalence of first moments of dimension $2(n-1)$ and phylogenetic trees
+for $n$ species has been shown above.
+Note that it would be possible that the $L$-representation of symbolic multivariate normal moments
+is sufficient but not necessary to determine the moment.  
+However, the $L$ representation of a multivariate normal moment can be determined by inspection
+from the $\sigma$ terms, so that the symbolic moment and its $L$ representation are, in fact, equivalent. 
 
-The formula derived here could be expanded to incorporate mean terms,
-which would allow computation of non-central moments.
-These moments could also be used to approximate other integrals
-integrated against the multivariate normal distribution by
-using a Taylor expansion in several variables \citep{fulks61}.
-Such an approximation would be a linear combination
-of non-central moments.
+
+\citet[page 61]{felsenstein2004} notes that finding the best tree using maximum parsimony is NP-hard,
+as shown by \cite{foulds82}.
+Felsenstein also notes that the Fitch algorithm for finding the number of changes
+in a given bifurcating tree is efficient \citep[page 11]{felsenstein2004}.
+This implies that finding all trees is itself NP-hard,
+and that therefore computing first multivariate moments is NP-hard.
+Note that for any even $n$ and any integer $r$, the moment
+$E[X_{1}^{r} \; X_{2}^{r} \;  \cdots  \; X_{n}^{r}]$
+has $L$ components whose terms are $L$ matrices from
+the representation of $E[X_{1}^{1} \; X_{2}^{1} \;  \cdots  \; X_{n}^{1}]$ multiplied by $r$. 
+So the representation of this first moment can be obtained from inspection of 
+the higher moment, implying that computing these higher moments is also NP-hard.
+
 
 Finally, Criterion~\ref{criterion} might arise in other contexts, such as networks \citep{networkcitation}.
 For example, suppose that there are $n$ airports and airport $i$ can accommodate $k_{i}$ arrivals or departures on a day,
@@ -473,10 +750,14 @@ The set of flights is the set satisfying Criterion~\ref{criterion}.
 \end{figure}
 
 
+\section{R functions}
 
-\section{R functions to compute normal multivariate moments}
-\label{rprogram}
-In the \proglang{R} functions to compute the central moments,
+
+\subsection{R functions for computing central moments}
+
+The following \proglang{R} functions calculate expressions and values for central and non-central moments.
+
+In these \proglang{R} functions,
 upper-triangular matrices $(\ell_{ij})$ for $n$ dimensions are represented as vectors of length $n(n+1)$,
 with row 1 followed by row 2, etc.
 For example, for $n=2$, $(\ell_{ij})$ is represented as $(\ell_{11},\ell_{12},\ell_{22})$.
@@ -519,37 +800,94 @@ Note that \code{simulate} uses only the moment definition, not the representatio
 so can be used with any moment in vector notation by converting the vector to a moment object as shown below.
 The \code{simulate} method uses the \code{rmvnorm} function from the \pkg{mvtnorm} package (\cite{mvtnorm08}.)
 
-Computation of the moments was validated by comparison to specific published cases and to known types such as $E[X^{k}]$ and $E[X_{1}^{1},\dots X_{n}^{1}]$,
-through consistency checks, and to comparison to numerically-computed moments.
-For consistency, the representations for moments which are permutations of each other must be the same within ordering across rows and columns;
-for example, $E[X_{1}^{2}X_{2}^{4}]$ and $E[X_{1}^{4}X_{2}^{2}]$ have the same representations within ordering.
-Also, a moment containing one or more odd powers will evaluate to 0 for a specified covariance matrix if the component of the random variable corresponding to one of the
-odd powers is independent of the other components, that is, if the off-diagonal covariance terms are zero for this component.
-The functions were confirmed to have this property for a number of cases.
+\subsection{R functions for computing non-central moments}
 
-Further validation was done using Monte Carlo integration.
-Various moments of dimension up to six were compared for two values of the covariance matrix,
-the identity matrix and a covariance matrix computed from ten random normal vectors obtained using the identity covariance matrix
-and then adding 1 to the diagonal elements to increase the variability.
-Forty estimates of the moment were then computed using the \code{simulate} method, each obtained from one million randomly generated multivariate normal vectors.
-From these estimates, 95\% confidence intervals were computed and compared to the moment estimates using the \code{estimate} method.
-In the 37 experiments done using an identity matrix, the moments computed from the symbolic representations fell outside the confidence interval
-in three (8.1\%) of the cases.
-However, in all three cases \code{callmultmoments} produced the value of zero,
-which is correct since the moments contained odd  powers and the components of the vectors were independent.
-In the 37 experiments done using a randomly-generated matrix, the moments computed from the symbolic representations fell outside the confidence interval
-in two (5.4\%) of the cases ($E[X_{1}^{2}X_{2}^{9}X_{3}^{11}]$ and $E[X_{1}^{2}X_{2}^{4}X_{3}^{7}X_{4}^{7}X_{5}^{8}]$), where the symbolically computed values
-lay slightly outside the confidence intervals.
-These two cases were run again using five million random normal vectors for each of the 40 estimates,
-and the moments computed from the symbolic representations fell inside the confidence intervals.
-These results provide further evidence that the functions given here are correct,
-and in fact are superior to numerical integration in obtaining moments,
-since it only requires a simple evaluation of a polynomial with integer coefficients.
-Numerical integration using adaptive methods was also implemented but worked poorly for higher dimensions \citep{kuonen03}.
+The \code{toLatex_noncentral} function produces a Latex expression for a noncentral moment.
+This function uses central moments in the environment specified in the function call.  
+The default environment is \code{symmoments}.
 
-\section{Examples of computing central moments}
+The \code{evaluate_noncentral} function evaluates a noncentral moment with specified mean and covariance matrix.
+This function uses central moments in the environment specified in the function call.  
+The default environment is \code{symmoments}.  
 
-The following moment is computed using the code given below:
+
+The \code{evaluate_expected.polynomial} function evaluates a multivariate polynomial,
+assuming a specified non-central multivariate distribution.
+This is done by calling \code{evaluate_noncentral} for each term in the polynomial.
+The polynomial is expressed as a \code{multipol} object, an \code{mpoly} object, or defined by a list giving
+the exponents in each term and its coefficient.
+The central moment objects required for this computation must be computed before invoking this function.
+The central moments must reside in the environment specified in the function call.  
+The default environment is \code{symmoments}.  
+
+The \code{convert.multipol} function converts between \code{multipol} objects and lists representing the same multivariate polynomial.
+
+The \code{convert.mpoly} function converts between \code{mpoly} objects and lists representing the same multivariate polynomial.
+Note that \code{convert.multipol} and \code{convert.mpoly} can be composed to transform between these two types of objects.
+However, the names of the variables will not be preserved.
+
+The \code{tounsorted} function produces an unsorted central moment object from a sorted object of class "moment".
+Unsorted moments are those with exponents not in numeric order, e.g., $m_{3,1,2}$.
+
+The \code{make.all.moments} function creates all central moment objects of a specified or smaller size. 
+That is, if $c(k_{1},...,k_{n})$
+is input, all moments $m_{l_{1},...,l_{n}}$ with $(l_{1},...,l_{n})\leq (k_{1},...,k_{n})$ are produced.
+The moments are placed in the \code{symmoments} environment.  If this environment does not exist, the user is prompted to create it.
+Moments that exist in the \code{symmoments} environment are not recreated.  
+Unsorted moments, those with exponents are not in numeric order,
+are created using the \code{tounsorted} function to transform from the sorted moment.
+If the sorted moment does not exist, it is created.
+Moments of lower dimension are not created; for example, if $c(2,4)$ is  input, $m_{20}$ is created, but $m_{2}$ is not.
+
+
+As a convention, moments are named $mij..l$, e.g., $m136$.  If any exponent is greater than $9$,
+lower case letters and then upper case letters are used.  For example,
+m3bA is the name of the moment $m_{3,11,36}$.
+The function \code{callmultmoments} theoretically accommodates larger exponents, but the largest exponent allowed by this scheme is $61$.
+If an object with a name of this form exists but is not an object of class "moment",
+it is replaced (overwritten) by the moment object.
+
+The \code{integrate.polynomial} function integrates a multivariate polynomial against a specified non-central multivariate distribution 
+using ordinary integration by invoking the \code{adaptIntegrate} function from the \pkg{cubature} package.
+This function was written mainly for checking.
+
+
+\subsection{R functions for correspondence with phylogenetic trees}
+
+Three \proglang{R} functions were written to implement the correspondences among
+the moment, matching, and Newick formats.
+
+The \code{toMoment} function converts a tree to moment format.
+Its input is a tree in Newick format \citep{newick} or a \code{matching} object from the \pkg{ape} package \citep{paradis2004}.
+\code{toMoment} outputs an object of class \code{L-matrix}.
+This class consists of $5$ components as defined in the function description,
+and includes the $L$ matrix.
+Note that the \pkg{symmoments} package
+defines the \code{moment} class, which encompasses all L-matrices for
+symbolic multivariate normal moments.
+
+The \code{toNewick} function converts a tree in moment format to Newick format.
+The input can be an \code{L-matrix} object, a square $L$ matrix,
+or an $L$ matrix in reduced upper-triangular (vector) form.
+The \code{toNewick} function sets its list output to class \code{L-Newick},
+which has $5$ components, including the tree in Newick format.
+
+The \code{toMatching} function converts a tree in moment format to an \pkg{ape} \code{matching} object.
+The input can be an \code{L-matrix} object, a square $L$ matrix,
+or an $L$ matrix in reduced  upper-triangular (vector) form.
+\code{toMatching} sets its list output to class \code{matching}
+to conform to the definition in the \pkg{ape} package.
+
+
+\subsection{Examples of computing central moments}
+%\scriptsize
+
+<<lib,echo=FALSE>>=
+library(symmoments)
+@
+
+These examples of the functions for central moments use the following moment:
+
 \begin{multline}
 \label{m1234example}
 <<m1234, echo=FALSE, results=tex>>=
@@ -608,17 +946,111 @@ evaluate(m1234, c(4, 2, 1, 1, 3, 1, 1, 2, 1, 2))
 
 The value of $E[ X_{ 1 }^{ 1 } X_{ 2 }^{ 2 } X_{ 3 }^{ 3 } X_{ 4 }^{ 4 } ]$ when
 $X$ has a normal distribution with mean $\mu = (1,2,0,3)$ and the same variance-covariance matrix
-as above could be estimated using \code{simulate} with $1000$ random samples:
+as above could be estimated using \code{simulate} with $1000$ random samples
+More samples may be required to obtain an accurate estimate.
 
-<<simulate-method, eval=FALSE>>=
-simulate(m1234,1000,NULL, c(1,2,0,3),c(4,2,1,1,2,3,1,1,1,1,2,1,1,1,1,2))
+<<simulate-method, eval=TRUE>>=
+#simulate(m1234,1000,NULL, c(1,2,0,3),c(4,2,1,1,2,3,1,1,1,1,2,1,1,1,1,2))
 @
 
+\subsection{Examples of computing non-central moments}
 
-\section*{Acknowledgments}
+ Note that several of these examples would require moments of various sizes exist, so have not been run.
+ These moments can be created using the \code{make.all.moments} function,
+ or directly using the \code{callmultmoments} function.
+\subsection*{Calculate symbolic representation of a non-central moment (not run)}
+<<noncentral1, echo=TRUE, term=TRUE, results=verbatim>>=
+# as.matrix(toLatex_noncentral(c(1,3))) 
+@
+\subsection*{Create all 2-dimensional moment objects with exponents up to 3 (not run)}
 
-The author would like to thank Dr.~Robin Hankin and Dr.~Achim Zeileis for several suggestions and assistance in constructing the \pkg{symmoments} package.
+Note that this will overwrite objects in the \code{symmoments} environment with names of the form  mxx, where 0 <= x <= 3
+<<noncentral2, echo=TRUE, term=TRUE, results=verbatim>>=
+# make.all.moments(c(3,3))
+@
+\subsection*{Evaluate a non-central moment at a specified mean and covariance matrix (not run)}
 
+Note that this would require moments to exist of order up to c(1,3).
+<<noncentral2a, echo=TRUE, term=TRUE, results=verbatim>>=
+# evaluate_noncentral(c(1,3),c(1,2),c(1,0,1))
+@
+
+\subsection*{Create an \code{mpoly} object}
+<<noncentral3a, echo=FALSE>>=
+library(mpoly)  # required for this example
+@
+<<noncentral3, echo=TRUE, term=TRUE, results=verbatim, print=TRUE>>=
+t0 <- mpoly(list(c(coef=3,x1=2),c(coef=2,x1=1,x2=3),
+                    c(coef=-4,z=2),c(coef=1,x1=1,x2=2,z=1)))                       
+print(t0)
+@
+\subsection*{Convert an \code{mpoly} object to a moment object}
+<<<noncentral4, echo=TRUE, term=TRUE, results=verbatim>>=
+t1 <<- convert.mpoly(t0)      
+t1
+@
+\subsection*{Convert a \code{moment} object to a \code{multipol} object}
+<<noncentral5, echo=TRUE, term=TRUE, results=verbatim>>=
+t2 <<- convert.multipol(t1)      
+t2
+@
+\subsection*{Convert from \code{multipol} back to \code{mpoly} through \code{moment}}
+<<noncentral6, echo=TRUE, term=TRUE, results=verbatim, print=TRUE>>=
+print(mpoly(convert.mpoly(convert.multipol(t2))))     
+@ 
+
+\subsection*{Evaluate the expected value of a multivariate polynomial (not run)}
+
+See the Latex example in the text. This requires moments to exist of order up to $c(1,2,3)$.
+<<noncentral7, echo=TRUE, term=TRUE, results=verbatim, print=TRUE>>=
+# evaluate_expected.polynomial(t0,c(1,2,3),c(1,0,0,1,0,1))
+@
+
+\normalsize
+\subsection{Examples of correspondence between first multivariate moments and phylogenetic trees}
+The following examples convert a tree in Newick format to
+trees in phylo, matching, and moment format.
+
+%\scriptsize
+\subsection*{Create a Newick representation of a tree}
+<<trees1, echo=TRUE, term=TRUE, results=verbatim>>=
+exam.Newick      <- "(((a,b),c),d);"
+@
+\subsection*{Convert to \code{phylo} format}
+<<trees2, echo=TRUE, term=TRUE, results=verbatim>>=
+library(ape)
+exam.phylo       <- read.tree(text=exam.Newick)
+exam.phylo
+@
+
+\subsection*{Convert to matching format}
+<<trees3, echo=TRUE, term=TRUE, results=verbatim>>=
+exam.matching    <- as.matching(exam.phylo)
+exam.matching 
+@
+
+\subsection*{Convert to L-matrix format}
+<<trees3, echo=TRUE, term=TRUE, results=verbatim>>=
+exam.L.matrix    <- toMoment(exam.matching)
+exam.L.matrix
+@
+
+\subsection*{Convert back to various formats (not run)}
+<<trees3, echo=TRUE, term=TRUE, results=verbatim>>=
+# backto.matching  <- toMatching(exam.L.matrix )
+# backto.L.matrix  <- toMoment(backto.matching$matching[,c(1,2)])
+# backto.Newick  <- toNewick(exam.L.matrix$L,type="square")
+# backto.L.matrix.tips <- toMoment(exam.Newick,tip.label=c("d","a","c","b"))
+# backto.phylo     <- as.phylo.matching(backto.matching)
+@
+
+\normalsize
+
+
+%%bibliographystyle{jss}
+%%\bibliography{c:\research\multivariate_moments\moments}
 \bibliography{moments}
 
 \end{document}
+
+
