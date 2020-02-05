@@ -1,6 +1,6 @@
-\name{symmomentsv2-package}
-\alias{ symmomentsv2-package}
-\alias{ symmomentsv2}
+\name{symmoments-package}
+\alias{ symmoments-package}
+\alias{ symmoments}
 \docType{package}
 \title{Symbolically compute and numerically evaluate multivariate central moments}
 
@@ -18,10 +18,10 @@ Also converts between moment L-matrices, phylo objects, and matching objects.
 
 \details{
 \tabular{ll}{
-Package: \tab symmomentsv2\cr
+Package: \tab symmoments\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2010-01-20\cr
+Version: \tab 1.2\cr
+Date: \tab 2018-05-30\cr
 License: \tab GPL 2\cr
 LazyLoad: \tab yes\cr}
 

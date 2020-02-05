@@ -1,13 +1,13 @@
-9f86fe426d0d3d8fd91d213e69526366 *DESCRIPTION
-f451a142ae8cc83f5189109a4385760d *NAMESPACE
-697e10405e4f7177fd38ff5eb6407373 *R/symmoments.R
-05d8a7bd3f349b110ea346e97d44c4e9 *build/vignette.rds
-bd683d35464adf5211603027f6ea1dd5 *inst/doc/symmoments.R
-81aade82578eb63d99949e7dfd17b6e8 *inst/doc/symmoments.pdf
-3bb757fa70daa65bea04b9b0f1a0c35d *inst/doc/symmoments.rnw
+da1c3b44217a922c312ead010e521c89 *DESCRIPTION
+fbd70816c844da71bf4e42937b90dc18 *NAMESPACE
+d13ddf3fe5635cc20261bd7e9e65a76a *R/symmoments.R
+26226dba13af0fb6d62b401ae4101529 *build/vignette.rds
+2af8041c1e69a94bb19581c94e55890c *inst/doc/symmoments.R
+a07da90d6b5895059810cbb2917a2f1f *inst/doc/symmoments.pdf
+521bf0d2de96a313966924c0f6d41b4d *inst/doc/symmoments.rnw
 93c380ae8d4e59b08956f76fe857d19f *man/callmultmoments.Rd
-9f5d579976359e2c62d7def7d11826a2 *man/convert.mpoly.Rd
-e0adec9c8cbdaa5e17321df6f6ebc4b5 *man/convert.multipol.Rd
+1f92be8debb4598b504df4f2b3b6ace9 *man/convert.mpoly.Rd
+f1c66c0392fdfe59dc12909bdf5ad45a *man/convert.multipol.Rd
 41b234dc4acec393eb4bada0c89eebec *man/evaluate.moment.Rd
 4d291bcf2900f369ac1bbc91449f54b9 *man/evaluate_expected.polynomial.Rd
 acbd86a57e0cd6ce785617a84102ad8a *man/evaluate_noncentral.Rd
@@ -16,7 +16,7 @@ a2a46a3018185a099b426a99c36c0548 *man/make.all.moments.Rd
 2e0aeec87b7973371f3a19908482725b *man/multmoments.Rd
 b8ae11aa27f201fddd69b329dbce70f9 *man/print.moment.rd
 9fded760e503a64c476e15a68ae2c181 *man/simulate.moment.Rd
-c77f3230c5f4100aa1216606f3becbd6 *man/symmoments-package.Rd
+ab60e966bccce59e3056dc7bcb1e76e9 *man/symmoments-package.Rd
 6f60d72e90e7c91bb5967dfa6ee929d5 *man/toLatex.moment.Rd
 69489f1ddabb3a72f16765f5da6ecae3 *man/toLatex_noncentral.Rd
 f90563f61b0b25af4ac92fd723b56c84 *man/toNewick.Rd
@@ -26,4 +26,4 @@ f21b66a3d89993afeb007a4bb7670593 *man/tomatching.Rd
 526cf167a101c93078c1146b8ca016de *vignettes/jss.dtx
 b9564ddd59a06782310989e8f33db55e *vignettes/jsslogo.jpg
 d27f5c004a8d9d21da4ea8a6e806a8a9 *vignettes/moments.bib
-3bb757fa70daa65bea04b9b0f1a0c35d *vignettes/symmoments.rnw
+521bf0d2de96a313966924c0f6d41b4d *vignettes/symmoments.rnw

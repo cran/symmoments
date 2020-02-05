@@ -444,13 +444,13 @@ function(object, nsim, seed=NULL, Mean, Sigma, ...){
 moment.fullrep <- object
 if (is.numeric(seed)){set.seed(seed)}
 
-if (class(moment.fullrep) == "moment"){thismoment <- moment.fullrep$moment}
-if (class(moment.fullrep) != "moment")
+if (inherits(moment.fullrep,"moment")){thismoment <- moment.fullrep$moment}
+if (!inherits(moment.fullrep,"moment"))
    {print("moment must be of class 'moment'")
     return(-1)}   
     
 ndim <- length(thismoment)                                                                                        
-sample <- rmvnorm(n=nsim, mean=Mean, sigma=matrix(Sigma,nrow=length(Mean)))
+sample <- mvtnorm::rmvnorm(n=nsim, mean=Mean, sigma=matrix(Sigma,nrow=length(Mean)))
 exponents <- matrix(rep(thismoment, nsim), nrow=nsim, byrow=TRUE)
 powers <- sample^exponents
 prods <- rep(1, nsim)        #  calculate product of powers of Xs
@@ -607,7 +607,7 @@ if (!exists('symmoments'))
   {symmoments <- NULL}
 if (exists('symmoments'))
   {
-   if (class(symmoments) == 'environment')
+   if (inherits(symmoments,'environment'))
       {create.envir <- FALSE}
   }
 if (create.envir)
@@ -643,13 +643,13 @@ for (mcount in 0:(product-1))
      Tmoment <- make.moment.name(thisone)
      if (exists(eval(parse(text=subblank(paste("'",Tmoment,"'")))),envir=symmoments,inherits=FALSE))
         { #3
-         if (class(eval(parse(text=subblank(paste('symmoments$',Tmoment))))) == 'moment')
+         if (inherits(eval(parse(text=subblank(paste('symmoments$',Tmoment)))),'moment'))
            {
             notmoment <- 0
             if (verbose)
                {print(paste(subblank(subblank(paste("symmoments$",Tmoment)))," exists"))}
             }  # done with this one
-         if (class(eval(parse(text=subblank(paste("symmoments$",Tmoment))))) != 'moment')
+         if (!inherits(eval(parse(text=subblank(paste("symmoments$",Tmoment)))),'moment'))
            {notmoment <- 1}
 
         } #3
@@ -668,14 +668,14 @@ for (mcount in 0:(product-1))
                Smoment <- make.moment.name(sortmoment)
                if (exists(eval(parse(text=subblank(paste("'",Smoment,"'")))),envir=symmoments,inherits=FALSE))
                   { #5
-                   if (class(eval(parse(text=subblank(paste("symmoments$",Smoment))))) == 'moment')  # canonical moment exists
+                   if (inherits(eval(parse(text=subblank(paste("symmoments$",Smoment)))),'moment'))  # canonical moment exists
                      { #6
                       thisvec <- make.moment.vector(thisone)
                       if (verbose)
                          {print(paste("Starting ",subblank(paste("symmoments$",Tmoment))))}
                       eval(parse(text=subblank(paste("symmoments$",Tmoment," <- tounsorted(",thisvec,",symmoments$",Smoment,")"))))
                      } #6
-                      if (class(eval(parse(text=subblank(paste("symmoments$",Smoment))))) != 'moment')
+                      if (!inherits(eval(parse(text=subblank(paste("symmoments$",Smoment)))),'moment'))
                          {notmoment <- 1}
                   } #5
 
@@ -706,7 +706,7 @@ function (moment,envir='symmoments')
 exists.envir <- FALSE
 if (exists(envir))
   {
-   if (class(eval(parse(text=envir))) == 'environment')
+   if (inherits(eval(parse(text=envir)),'environment'))
       {exists.envir <- TRUE}
   }
 if (!exists.envir)
@@ -872,7 +872,7 @@ function (moment,mu,sigma,envir='symmoments')
 exists.envir <- FALSE
 if (exists(envir))
   {
-   if (class(eval(parse(text=envir))) == 'environment')
+   if (inherits(eval(parse(text=envir)),'environment'))
       {exists.envir <- TRUE}
   }
 if (!exists.envir)
@@ -956,7 +956,7 @@ function (poly)
 {
 # convert between a mpoly object and a list giving the corresponding moments and coefficients
 
-if (class(poly)=="mpoly") 
+if (inherits(poly,"mpoly")) 
  {
    mpoly.list <- unclass(poly)
    matrix.size <- length(mpoly.list)
@@ -1010,7 +1010,7 @@ if (class(poly)=="mpoly")
    }
 
 
-if (class(poly)!="mpoly")  # assume conversion from matrix (ie, list) to mpoly
+if (!inherits(poly,"mpoly"))  # assume conversion from matrix (ie, list) to mpoly
  { 
   n.powers <- dim(poly$powers)[1]
   if (!is.null(n.powers) | 0==0)
@@ -1078,7 +1078,7 @@ subblank <- function (inputstring)
     }
     return(outputstring)
 }
-if (class(poly)=="multipol") 
+if (inherits(poly,"multipol")) 
  {
    multipol.array <- as.array(poly)
 
@@ -1135,7 +1135,7 @@ if (class(poly)=="multipol")
  }
 
 
-if (class(poly)!="multipol")  # assume conversion from matrix (ie, list) to multipol
+if (!inherits(poly,"multipol"))  # assume conversion from matrix (ie, list) to multipol
  {
   n.powers <- dim(poly$powers)[1]
   moment.size <- dim(poly$powers)[2]
@@ -1179,7 +1179,7 @@ function (poly,mu,sigma,envir='symmoments')
 exists.envir <- FALSE
 if (exists(envir))
   {
-   if (class(eval(parse(text=envir))) == 'environment')
+   if (inherits(eval(parse(text=envir)),'environment'))
       {exists.envir <- TRUE}
   }
 if (!exists.envir)
@@ -1187,9 +1187,9 @@ if (!exists.envir)
 
 
 temp.poly <- poly
-if (class(poly) == "multipol")
+if (inherits(poly,"multipol"))
   {temp.poly <- convert.multipol(poly)}
-if (class(poly) == "mpoly")
+if (inherits(poly,"mpoly"))
   {temp.poly <- convert.mpoly(poly)}
 
 
@@ -1216,12 +1216,12 @@ return(value)
 `toMoment` <- 
 function (inputobject, tip.label = NULL) 
 {
-    if (class(inputobject) != "matching" & !is.matrix(inputobject)) {
-        if (class(inputobject) != "L-Newick") {
+    if (!inherits(inputobject,"matching") & !is.matrix(inputobject)) {
+        if (!inherits(inputobject,"L-Newick")) {
             temp <- inputobject
             Newick.out <- inputobject
         }
-        if (class(inputobject) == "L-Newick") {
+        if (inherits(inputobject,"L-Newick")) {
             temp <- inputobject$Newick
             Newick.out <- inputobject$Newick
         }
@@ -1301,9 +1301,9 @@ function (inputobject, tip.label = NULL)
         class(SMNM) <- "L-matrix"
         return(SMNM)
     }
-    if (class(inputobject) == "matching" | is.matrix(inputobject)) {
+    if (inherits(inputobject,"matching") | is.matrix(inputobject)) {
         temp.tip.label <- NULL
-        if (class(inputobject) == "matching") {
+        if (inherits(inputobject,"matching")) {
             temp.matching <- inputobject$matching[, c(1, 2)]
             if (!is.null(inputobject$tip.label)) {
                 temp.tip.label <- inputobject$tip.label
@@ -1345,7 +1345,7 @@ function (inputobject, tip.label = NULL)
         if (!is.null(tip.label)) {
             tips <- tip.label
         }
-        if (is.null(tip.label) & class(inputobject) == "matching") {
+        if (is.null(tip.label) & inherits(inputobject,"matching")){
             if (!is.null(inputobject$tip.label)) {
                 tips <- inputobject$tip.label
             }
@@ -1372,7 +1372,7 @@ toSquare <- function (L.ut)
     return(L)
 }
 
-    if (class(L) == "L-matrix") {
+    if (inherits(L,"L-matrix")) {
         L.matrix <- L$L
     }
     if (!is.null(type)) {
@@ -1390,10 +1390,10 @@ toSquare <- function (L.ut)
     if (!is.null(tip.label)) {
         tips <- tip.label
     }
-    if (is.null(tip.label) & class(L) == "L-matrix") {
+    if (is.null(tip.label) & inherits(L,"L-matrix")) {
         tips <- L$tip.label
     }
-    if (is.null(tip.label) & class(L) != "L-matrix") {
+    if (is.null(tip.label) & !inherits(L,"L-matrix")) {
         if (n <= 26) {
             tips <- letters[1:n]
         }
@@ -1442,7 +1442,7 @@ toSquare <- function (L.ut)
     return(L)
 }
 
-    if (class(L) == "L-matrix") {
+    if (inherits(L,"L-matrix")) {
         L.matrix <- L$L
         if (!is.null(L$tip.label) & is.null(tip.label)) {
             tip.label <- L$tip.label
@@ -1688,9 +1688,9 @@ if (is.null(upper))
    {upper <- mu + 6*sqrt(diag(sigma))}
 
 thispoly <- poly
-if (class(poly) == "multipol")
+if (inherits(poly,"multipol"))
   {thispoly <- convert.multipol(poly)}
-if (class(poly) == "mpoly")
+if (inherits(poly,"mpoly"))
   {thispoly <- convert.mpoly(poly)}
 
 ndim <- dim(thispoly$powers)[2]
@@ -1706,7 +1706,7 @@ value <- 0
        {
         y <- y*x[idim]^powers[imom,idim]
        }
-     y <- y*dmvnorm(x,mean=mu,sigma=sigma, log=FALSE)
+     y <- y*mvtnorm::dmvnorm(x,mean=mu,sigma=sigma, log=FALSE)
      return(y)
     }
 
@@ -1715,5 +1715,7 @@ for (imom in 1:npowers)
     value <- value + coeff[imom]*thisvalue
    }
 return(value)}
+
+
 
 

@@ -76,35 +76,35 @@ evaluate(m1234, c(4, 2, 1, 1, 3, 1, 1, 2, 1, 2))
 ###################################################
 ### code chunk number 13: noncentral3a
 ###################################################
-library(mpoly)  # required for this example
+# the mpoly library is required for this example
 
 
 ###################################################
 ### code chunk number 14: noncentral3
 ###################################################
-t0 <- mpoly(list(c(coef=3,x1=2),c(coef=2,x1=1,x2=3),
-                    c(coef=-4,z=2),c(coef=1,x1=1,x2=2,z=1)))                       
-print(t0)
+# t0 <- mpoly::mpoly(list(c(coef=3,x1=2),c(coef=2,x1=1,x2=3),
+#                    c(coef=-4,z=2),c(coef=1,x1=1,x2=2,z=1)))                       
+# print(t0)
 
 
 ###################################################
 ### code chunk number 15: <noncentral4
 ###################################################
-t1 <<- convert.mpoly(t0)      
-t1
+# t1 <<- convert.mpoly(t0)      
+# t1
 
 
 ###################################################
 ### code chunk number 16: noncentral5
 ###################################################
-t2 <<- convert.multipol(t1)      
-t2
+# t2 <<- convert.multipol(t1)      
+# t2
 
 
 ###################################################
 ### code chunk number 17: noncentral6
 ###################################################
-print(mpoly(convert.mpoly(convert.multipol(t2))))     
+# print(mpoly::mpoly(convert.mpoly(convert.multipol(t2))))     
 
 
 ###################################################
